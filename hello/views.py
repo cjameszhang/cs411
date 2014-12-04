@@ -190,12 +190,33 @@ def markVote(request):
 
     # votee = request.POST['email']
 
-    voter, votee, direction = request.POST['query'].split('+')
-    direction = int(direction)
+    try:
+        voter, votee, direction = request.POST['query'].split(' ')
+    except:
+        voter = None
+
+    if voter is None:
+        try:
+            voter, votee, direction = request.POST['query'].split('+')
+        except:
+            voter = None
+
+    if voter is None:
+        voter, votee, direction = request.GET['query'].split(' ')
+        try:
+            pass
+        except:
+            voter = None
+
+    voter = str(voter)
+    votee = str(votee)
+
+    direction = 1 if direction == 'up' else -1
 
     db=get_db()
     cursor = db.cursor()#connection.cursor()
     #score = cursor.execute("SELECT score FROM hello_User WHERE email = '%s'" % votee).fetchone()[0]
+    #print >> sys.stderr, ("SELECT score FROM Users WHERE email = '%s'" % votee)
     cursor.execute("SELECT score FROM Users WHERE email = '%s'" % votee)
     score = cursor.fetchone()[0]
     if votee != voter:
