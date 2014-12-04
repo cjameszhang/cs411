@@ -541,7 +541,8 @@ def recommended(request):
     for x in sorted_x:
         cursor.execute("SELECT * FROM Users WHERE email = '%s'" % (x[0], ))
         user = cursor.fetchall()
-        temp.append(get_user_from_tuple(user[0]))
+        if len(user) != 0:
+            temp.append(get_user_from_tuple(user[0]))
     users = temp
 
     # put into state
