@@ -259,38 +259,42 @@ def markVote(request):
     return HttpResponse(json.dumps(response_data), content_type="application/json")
 
 def markLogin(request):
-    if 'user_email' in request.session:
-        return HttpResponseRedirect('/account')
 
-    # TODO: redirect if user isn't None?
-    params = {
-        'user': None,
-        'emailInput': '',
-        'emailError': '',
-        'passwordError': '',
-        'request': request
-    }
+    try:
+        email = request.POST['query']
+    except:
+        email = None
 
-    params.update(csrf(request))
-    if request.method == 'GET':
-        return render(request, 'login.html', params)
-    elif request.method == 'POST':
-        email = request.POST['email']
-        pw = get_hashed_password(request.POST['password'])
-
+    if email is None:
         try:
-            user = user_login(email) #User.objects.get(email=email);
+            email = request.POST['query']
         except:
-            user = None
+            email = None
 
-        if user and pw == user.password:
-            request.session['user_email'] = email
-            return HttpResponseRedirect('/account')
+    if email is None:
+        try:
+            email= request.GET['query']
+        except:
+            email = None
 
-        params['emailInput'] = email
-        params['emailError'] = 'Invalid username or password'
-        params['passwordError'] = ''
-        return render(request, 'login.html', params)
+    passwd = ''
+    db = get_db()
+    if db is not None:
+        try:
+            cursor = db.cursor()
+            cursor.execute("""
+                SELECT password
+                FROM Users
+                WHERE email = '%s'
+                """ % (email, ))
+            passwd = cursor.fetchone()[0]
+            db.close()
+        except:
+            pass
+
+    response_data = {}
+    response_data['password'] = passwd
+    return HttpResponse(json.dumps(response_data), content_type="application/json")
 
 def login(request):
 
