@@ -210,6 +210,7 @@ def markVote(request):
 
     voter = str(voter)
     votee = str(votee)
+    direction = str(direction)
 
     direction = 1 if direction == 'up' else -1
 
