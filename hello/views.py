@@ -10,7 +10,7 @@ import os
 import os.path
 import re
 import sys
-from .db import get_db, user_register, user_login
+from .db import get_db, user_register, user_login, get_base64_image, users_by_name
 from .db import get_image, user_by_id, vote_create, user_by_name, user_delete
 from .db import get_hashed_password, get_user_from_tuple, join_query
 import time
@@ -76,13 +76,19 @@ def search(request):
         return HttpResponseRedirect('/%d' % int(user.id))
     except:
         pass
-    try:
+    #try:
         # search by name
         #user = User.objects.get(name__iexact=query)
-        user = user_by_name(query)#User.objects.get(email=query)
-        return HttpResponseRedirect('/%d' % int(user.id))
-    except:
+        #user = user_by_name(query)
+    users = users_by_name(query)
+    if len(users) == 0:
         pass
+    elif len(users) == 1:
+        return HttpResponseRedirect('/%d' % int(users[0].id))
+    else:
+        return render(request, "multiSearch.html", {'users':users})
+    #except:
+    #    pass
 
     return HttpResponseRedirect('/%d' % 20000000000)
 
@@ -416,6 +422,42 @@ def reverse(request):
     db.commit()
     db.close()
     return HttpResponseRedirect('/account')
+
+def nameChange(request):
+    email = 'error'
+    try:
+        email = request.session['user_email']
+    except KeyError:
+        return HttpResponseRedirect('/login')
+
+    if request.method == 'GET':
+        return render(request, 'nameChange.html', {})
+    else:
+        newName = request.POST['newName']
+        user = user_login(email)
+        db=get_db()
+        db.cursor().execute("UPDATE Users SET name = '%s' WHERE id = %d" % (newName, int(user.id)))
+        db.commit()
+        db.close()
+        return HttpResponseRedirect('/account')
+
+def imageChange(request):
+    email = 'error'
+    try:
+        email = request.session['user_email']
+    except KeyError:
+        return HttpResponseRedirect('/login')
+
+    if request.method == 'GET':
+        return render(request, 'imageChange.html', {})
+    else:
+        image = request.FILES['image']
+        user = user_login(email)
+        db=get_db()
+        db.cursor().execute("UPDATE Users SET image = '%s' WHERE id = %d" % (get_base64_image(image), int(user.id)))
+        db.commit()
+        db.close()
+        return HttpResponseRedirect('/account')
 
 def vote(request):
     voter = '';
