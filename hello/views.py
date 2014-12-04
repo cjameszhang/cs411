@@ -240,7 +240,8 @@ def markVote(request):
             canVote = False
             score = 'none'
         if canVote:
-            change = 1 if (direction == 'upvote') else -1
+            #change = 1 if (direction == 'upvote') else -1
+            change = direction
             score += change
             cursor.execute("UPDATE Users SET score = %d WHERE email = '%s'" % (score, votee))
             cursor.execute("""UPDATE Votes 
