@@ -180,14 +180,18 @@ def markScoreboard(request):
 def markVote(request):
     voter = '';
     try:
-        voter = request.session['user_email']
+        #voter = request.session['user_email']
+        pass
     except:
         score = 'notLoggedIn'
         response_data = {}
         response_data['score'] = score
         return HttpResponse(json.dumps(response_data), content_type="application/json")
 
-    votee = request.POST['email']
+    # votee = request.POST['email']
+
+    voter, votee, direction = request.POST['query'].split('+')
+    direction = int(direction)
 
     db=get_db()
     cursor = db.cursor()#connection.cursor()
@@ -209,12 +213,12 @@ def markVote(request):
             last = last_tuple[0]
             canVote = epoch - last > 60
             if not canVote:
-                score = 'tooQuick'
+                score = 'wait'
         else:
             canVote = False
-            score = 'noneError'
+            score = 'none'
         if canVote:
-            change = 1 if (request.POST['direction'] == 'upvote') else -1
+            change = 1 if (direction == 'upvote') else -1
             score += change
             cursor.execute("UPDATE Users SET score = %d WHERE email = '%s'" % (score, votee))
             cursor.execute("""UPDATE Votes 
@@ -228,7 +232,7 @@ def markVote(request):
     db.commit()
     db.close()
     response_data = {}
-    response_data['score'] = 'valid'
+    response_data['score'] = str(score)
     return HttpResponse(json.dumps(response_data), content_type="application/json")
 
 def markLogin(request):
