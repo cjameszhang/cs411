@@ -609,7 +609,7 @@ def recommended(request):
     db = get_db()
     if len(users) == 0:
         cursor = db.cursor()
-        cursor.execute("SELECT * FROM Users ORDER BY score DESC LIMIT 10")
+        cursor.execute("SELECT * FROM Users ORDER BY score DESC LIMIT 3")
         users = cursor.fetchall()
         temp = []
         for user in users:
@@ -617,34 +617,36 @@ def recommended(request):
                 temp.append(get_user_from_tuple(user))
         users = temp
 
-    # hash the current users
-    table = {}
-    for u in users:
-        table[u.email] = 1
+    NUMBER_OF_USERS = 4
+    if len(users) < NUMBER_OF_USERS:
+        # hash the current users
+        table = {}
+        for u in users:
+            table[u.email] = 1
 
-    # add some random users
-    cursor = db.cursor()
-    cursor.execute("SELECT * From Users")
-    all_users = cursor.fetchall()
-    random_users = []
-    for au in all_users:
-        au_user = get_user_from_tuple(au)
-        au_email = au_user.email
-        if au_email not in table and au_email != cur_user:
-            random_users.append(au_user)
+        # add some random users
+        cursor = db.cursor()
+        cursor.execute("SELECT * From Users")
+        all_users = cursor.fetchall()
+        random_users = []
+        for au in all_users:
+            au_user = get_user_from_tuple(au)
+            au_email = au_user.email
+            if au_email not in table and au_email != cur_user:
+                random_users.append(au_user)
 
-    # select random users
-    import random
-    random.shuffle(random_users)
-    left = 9 - len(users)
-    if left > 0:
-        users.extend(random_users[:left])
+        # select random users
+        import random
+        random.shuffle(random_users)
+        left = NUMBER_OF_USERS - len(users)
+        if left > 0:
+            users.extend(random_users[:left])
 
     # let the user login
     user = None
     if 'user_email' in request.session:
         user = user_login(request.session['user_email'])
 
-    return render(request, 'recommendations.html', {'request':request, 'users':users, 'user':user})
+    return render(request, 'recommendations.html', {'request':request, 'users':users[:NUMBER_OF_USERS], 'user':user})
 
     
