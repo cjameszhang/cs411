@@ -462,7 +462,12 @@ def nameChange(request):
         return HttpResponseRedirect('/login')
 
     if request.method == 'GET':
-        return render(request, 'nameChange.html', {})
+        params = { 'user': None, 'request' : request }
+        if 'user_email' in request.session:
+            #params['user'] = User.objects.get(email=request.session['user_email'])
+            email = request.session['user_email']
+            params['user'] = user_login(email)
+        return render(request, 'nameChange.html', params)
     else:
         newName = request.POST['newName']
         user = user_login(email)
@@ -480,7 +485,13 @@ def imageChange(request):
         return HttpResponseRedirect('/login')
 
     if request.method == 'GET':
-        return render(request, 'imageChange.html', {})
+        params = { 'user': None, 'request' : request }
+        if 'user_email' in request.session:
+            #params['user'] = User.objects.get(email=request.session['user_email'])
+            email = request.session['user_email']
+            params['user'] = user_login(email)
+
+        return render(request, 'imageChange.html', params)
     else:
         image = request.FILES['image']
         user = user_login(email)
