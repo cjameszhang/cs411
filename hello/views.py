@@ -556,23 +556,6 @@ def images(request, user_id, file_ext):
 
 # advanced feature: recommendations
 
-"""
-def get_next_state(links, cur_state):
-    result = np.zeros(len(cur_state))
-    for link, amount in zip(links, cur_state):
-        for dest in link:
-            result[dest] += amount / float(len(link))
-    return result
-
-s_p = initial_state
-first_state = get_next_state(links, s_p)
-while True:
-    s_n = get_next_state(links, s_p)
-    if max(abs(s_n - s_p)) < 1e-9: # TODO: also limit on number of iterations
-        break
-    s_p = s_n
-    """
-
 def recommended(request):
     if 'user_email' not in request.session:
         return HttpResponseRedirect('/account')
@@ -591,17 +574,21 @@ def recommended(request):
         scores[votee_tuple[0]] = -1
         cursor.execute("SELECT votee FROM Votes WHERE voter = '%s'" % (votee_tuple[0], ))
         sub_votees = cursor.fetchall()
+
+        import random
+        random.seed()
+        weight = 1 + random.random() / 4
+
         for sub_votee in sub_votees:
             sub_name = sub_votee[0]
             if sub_name not in scores:
                 scores[sub_name] = 0
             if scores[sub_name] != -1:
-                scores[sub_name] += 1 / len(sub_votees)
+                scores[sub_name] += weight / len(sub_votees)
 
     import operator
     sorted_x = sorted(scores.items(), reverse=True, key=operator.itemgetter(1))
     sorted_x = sorted_x[:9]
-
 
     result_x = []
     for i in sorted_x:
@@ -618,7 +605,8 @@ def recommended(request):
             temp.append(get_user_from_tuple(user[0]))
     users = temp
 
-    # put into stat    db = get_db()
+    # put into stats
+    db = get_db()
     if len(users) == 0:
         cursor = db.cursor()
         cursor.execute("SELECT * FROM Users ORDER BY score DESC LIMIT 10")
@@ -629,8 +617,34 @@ def recommended(request):
                 temp.append(get_user_from_tuple(user))
         users = temp
 
+    # hash the current users
+    table = {}
+    for u in users:
+        table[u.email] = 1
+
+    # add some random users
+    cursor = db.cursor()
+    cursor.execute("SELECT * From Users")
+    all_users = cursor.fetchall()
+    random_users = []
+    for au in all_users:
+        au_user = get_user_from_tuple(au)
+        au_email = au_user.email
+        if au_email not in table and au_email != cur_user:
+            random_users.append(au_user)
+
+    # select random users
+    import random
+    random.shuffle(random_users)
+    left = 9 - len(users)
+    if left > 0:
+        users.extend(random_users[:left])
+
+    # let the user login
     user = None
     if 'user_email' in request.session:
         user = user_login(request.session['user_email'])
+
     return render(request, 'recommendations.html', {'request':request, 'users':users, 'user':user})
 
+    
