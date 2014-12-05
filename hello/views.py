@@ -588,7 +588,7 @@ def recommended(request):
 
         import random
         random.seed()
-        weight = 1 + random.random() / 4
+        weight = 1 + 0.6 * random.random()
 
         for sub_votee in sub_votees:
             sub_name = sub_votee[0]
