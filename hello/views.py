@@ -618,7 +618,19 @@ def recommended(request):
             temp.append(get_user_from_tuple(user[0]))
     users = temp
 
-    # put into state
+    # put into stat    db = get_db()
+    if len(users) == 0:
+        cursor = db.cursor()
+        cursor.execute("SELECT * FROM Users ORDER BY score DESC LIMIT 10")
+        users = cursor.fetchall()
+        temp = []
+        for user in users:
+            if user != cur_user:
+                temp.append(get_user_from_tuple(user))
+        users = temp
 
-    return render(request, 'recommendations.html', {'request':request, 'users':users, 'user':cur_user})
+    user = None
+    if 'user_email' in request.session:
+        user = user_login(request.session['user_email'])
+    return render(request, 'recommendations.html', {'request':request, 'users':users, 'user':user})
 
